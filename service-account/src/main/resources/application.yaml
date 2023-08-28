@@ -1,0 +1,16 @@
+server:
+  port: 9001
+spring:
+  application:
+    name: service-account
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  cloud:
+    nacos:
+      discovery:
+        server-addr:
+      config:
+        server-addr:
+        file-extension: yaml
+  config:
+    import: nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}
