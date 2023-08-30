@@ -6,10 +6,10 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
@@ -41,12 +41,8 @@ public class AuthorizationFilter implements Ordered, GlobalFilter {
 		String token = exchange.getRequest().getHeaders().getFirst("Authorization");
 		try {
 			long accountId = JWTUtil.validateToken(token);
-			UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUri(exchange.getRequest().getURI());
-			uriBuilder.queryParam("accountId", accountId);
-			ServerWebExchange modifiedExchange = exchange.mutate()
-					.request(builder -> builder.uri(uriBuilder.build().toUri()))
-					.build();
-			return chain.filter(modifiedExchange);
+			ServerHttpRequest mutateRequest = exchange.getRequest().mutate().header("accountId", String.valueOf(accountId)).build();
+			return chain.filter(exchange.mutate().request(mutateRequest).build());
 		} catch (CustomException e) {
 			exchange.getResponse().setStatusCode(HttpStatus.valueOf(e.getCode()));
 			return exchange.getResponse().setComplete();
