@@ -7,7 +7,6 @@ import com.zhoupb.mysite.api.account.AccountFeignClient;
 import com.zhoupb.mysite.common.JSONPageResponse;
 import com.zhoupb.mysite.common.JSONResponse;
 import com.zhoupb.mysite.common.util.SensitiveWordFilter;
-import com.zhoupb.mysite.common.util.StringUtils;
 import com.zhoupb.mysite.model.account.entity.Account;
 import com.zhoupb.mysite.model.blog.AuditStatusEnum;
 import com.zhoupb.mysite.model.blog.dto.BlogPostDTO;
@@ -61,7 +60,7 @@ public class BlogController {
      */
     @PostMapping("/content")
     @Transactional
-    public JSONResponse<Void> post(@RequestParam long accountId, @RequestBody BlogPostDTO dto) {
+    public JSONResponse<Void> post(@RequestHeader long accountId, @RequestBody BlogPostDTO dto) {
         JSONResponse<Account> resp = accountFeignClient.getAccountById(accountId);
         if ( resp.code() / 100 != 2 )
             return JSONResponse.fail(HttpStatus.valueOf(resp.code()), resp.message());
@@ -126,8 +125,11 @@ public class BlogController {
             blogConfig.setAuditStatus(AuditStatusEnum.FAILURE);
             blogConfig.setFailureReason("存在敏感词：" + sensitiveWords);
         }
-        else
+        else {
             blogConfig.setAuditStatus(AuditStatusEnum.SUCCESS);
+            // blogConfigMapper.updateByPrimaryKeySelective(blogConfig);
+            // 审核成功后，放入ElasticSearch中
+        }
 
         blogConfigMapper.insert(blogConfig);
         return JSONResponse.ok(HttpStatus.OK, null);
