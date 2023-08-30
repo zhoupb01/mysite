@@ -1,0 +1,20 @@
+server:
+  port: 9003
+spring:
+  application:
+    name: service-file
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  cloud:
+    nacos:
+      discovery:
+        server-addr:
+      config:
+        server-addr:
+        file-extension: yaml
+  config:
+    import: nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}
+
+app:
+  file:
+    allow-type: jpg,jpeg,png,gif

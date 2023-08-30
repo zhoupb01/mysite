@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>service-blog</artifactId>
+    <artifactId>service-file</artifactId>
 
     <dependencies>
         <dependency>
@@ -18,12 +18,13 @@
         </dependency>
         <dependency>
             <groupId>com.zhoupb.mysite</groupId>
-            <artifactId>model</artifactId>
+            <artifactId>minio-file-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>com.zhoupb.mysite</groupId>
-            <artifactId>feign-api</artifactId>
+            <artifactId>model</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -32,11 +33,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.mybatis.spring.boot</groupId>
-            <artifactId>mybatis-spring-boot-starter</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
@@ -54,8 +50,8 @@
             <artifactId>mybatis-mapper</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.pagehelper</groupId>
-            <artifactId>pagehelper-spring-boot-starter</artifactId>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 
