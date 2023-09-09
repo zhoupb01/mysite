@@ -20,11 +20,15 @@ public class AuthorizationFilter implements Ordered, GlobalFilter {
 
 	private static final Set<String> EXCLUDE_PATH_PATTERN = new HashSet<>();
 
+	/*
+	 * 这个地方如此，丝毫不优雅，回头找个机会，写个注解给他们都换咯
+	 */
 	static
 	{
 		EXCLUDE_PATH_PATTERN.add("/api/account/v1/authorization/signin");
 		EXCLUDE_PATH_PATTERN.add("/api/blog/v1/content/{id}");
 		EXCLUDE_PATH_PATTERN.add("/api/blog/v1/list");
+		EXCLUDE_PATH_PATTERN.add("/api/search/v1/associative/{keyword}");
 	}
 
 	private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();

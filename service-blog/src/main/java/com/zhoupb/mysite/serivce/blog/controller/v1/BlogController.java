@@ -6,7 +6,6 @@ import com.github.yitter.idgen.YitIdHelper;
 import com.zhoupb.mysite.api.account.AccountFeignClient;
 import com.zhoupb.mysite.common.JSONPageResponse;
 import com.zhoupb.mysite.common.JSONResponse;
-import com.zhoupb.mysite.common.util.SensitiveWordFilter;
 import com.zhoupb.mysite.model.account.entity.Account;
 import com.zhoupb.mysite.model.blog.AuditStatusEnum;
 import com.zhoupb.mysite.model.blog.dto.BlogPostDTO;
@@ -19,12 +18,13 @@ import com.zhoupb.mysite.serivce.blog.mapper.BlogCategoryMapper;
 import com.zhoupb.mysite.serivce.blog.mapper.BlogConfigMapper;
 import com.zhoupb.mysite.serivce.blog.mapper.BlogContentMapper;
 import com.zhoupb.mysite.serivce.blog.mapper.BlogMapper;
+import com.zhoupb.mysite.serivce.blog.service.BlogService;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/v1")
@@ -40,15 +40,15 @@ public class BlogController {
 
     private final AccountFeignClient accountFeignClient;
 
-    private final SensitiveWordFilter sensitiveWordFilter;
+    private final BlogService blogService;
 
-    public BlogController(BlogMapper blogMapper, BlogCategoryMapper blogCategoryMapper, BlogConfigMapper blogConfigMapper, BlogContentMapper blogContentMapper, AccountFeignClient accountFeignClient, SensitiveWordFilter sensitiveWordFilter) {
+    public BlogController(BlogMapper blogMapper, BlogCategoryMapper blogCategoryMapper, BlogConfigMapper blogConfigMapper, BlogContentMapper blogContentMapper, AccountFeignClient accountFeignClient, BlogService blogService) {
         this.blogMapper = blogMapper;
         this.blogCategoryMapper = blogCategoryMapper;
         this.blogConfigMapper = blogConfigMapper;
         this.blogContentMapper = blogContentMapper;
         this.accountFeignClient = accountFeignClient;
-        this.sensitiveWordFilter = sensitiveWordFilter;
+        this.blogService = blogService;
     }
 
     /**
@@ -102,36 +102,11 @@ public class BlogController {
         blogConfig.setDeleted(false);
         blogConfig.setDisplayable(true);
         blogConfig.setAuditStatus(AuditStatusEnum.AUDITING);
-
-        // TODO 将下面这一坨放到RabbitMQ中
-        StringBuilder tmp = new StringBuilder();
-        // title
-        tmp.append(dto.title());
-        tmp.append("--");
-        // raw_content
-        tmp.append(dto.rawContent());
-        tmp.append("--");
-        // html_content
-        tmp.append(dto.htmlContent());
-        tmp.append("--");
-        // summary
-        tmp.append(dto.summary());
-        tmp.append("--");
-        // 关键字
-        tmp.append(Arrays.toString(dto.keywords()));
-        // 审核
-        Set<String> sensitiveWords = sensitiveWordFilter.findSensitiveWords(tmp.toString());
-        if (sensitiveWords.size() > 0) {
-            blogConfig.setAuditStatus(AuditStatusEnum.FAILURE);
-            blogConfig.setFailureReason("存在敏感词：" + sensitiveWords);
-        }
-        else {
-            blogConfig.setAuditStatus(AuditStatusEnum.SUCCESS);
-            // blogConfigMapper.updateByPrimaryKeySelective(blogConfig);
-            // 审核成功后，放入ElasticSearch中
-        }
-
         blogConfigMapper.insert(blogConfig);
+
+        // 审核文章
+        blogService.check(blog.getId());
+
         return JSONResponse.ok(HttpStatus.OK, null);
     }
 
@@ -155,15 +130,8 @@ public class BlogController {
 
     @GetMapping("/list")
     public JSONPageResponse<Blog> list(@RequestParam(required = false, defaultValue = "1") int page, @RequestParam(required = false, defaultValue = "10") int size) {
-        List<Long> ids = blogConfigMapper.wrapper()
-                .eq(BlogConfig::getAuditStatus, AuditStatusEnum.SUCCESS)
-                .eq(BlogConfig::getDisplayable, true)
-                .stream()
-                .map(BlogConfig::getBlogId)
-                .toList();
-
-        Page<Blog> pages = PageHelper.startPage(page, size).doSelectPage(() -> blogMapper.selectByFieldList(Blog::getId, ids));
-        return new JSONPageResponse<>(pages);
+        Page<Blog> pages = PageHelper.startPage(page, size).doSelectPage(blogMapper::selectDisplayable);
+        return new JSONPageResponse<>(HttpStatus.OK.value(), pages, null, pages.getTotal(), pages.getPageNum(), pages.getPageSize());
     }
 
 }
